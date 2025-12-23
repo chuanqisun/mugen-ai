@@ -1,17 +1,20 @@
 import { get, set } from "idb-keyval";
 import { BehaviorSubject, filter, from, fromEvent, ignoreElements, map, merge, switchMap, tap } from "rxjs";
+import { testGemini$ } from "../models/gemini";
 
 export interface Connections {
   geminiApiKey: string;
 }
 
-const config$ = new BehaviorSubject<Connections>(getDefaultConfig());
+export const config$ = new BehaviorSubject<Connections>(getDefaultConfig());
 
 export interface UseConnectionsProps {
   connectionForm: HTMLFormElement;
 }
 
 export function useConnections(props: UseConnectionsProps) {
+  const output = props.connectionForm.querySelector<HTMLElement>("#test-output")!;
+
   const init$ = from(get<Connections>("mugen-ai:connection")).pipe(
     filter((config) => config !== undefined),
     tap((storedConfig) => config$.next({ ...getDefaultConfig(), ...storedConfig })),
@@ -20,8 +23,16 @@ export function useConnections(props: UseConnectionsProps) {
 
   const formChange$ = fromEvent(props.connectionForm, "change").pipe(map(getConfigObject(config$)), switchMap(saveConfig));
 
+  const testOnSubmit$ = fromEvent(props.connectionForm, "submit").pipe(
+    tap((e) => e.preventDefault()),
+    map(getConfigObject(config$)),
+    switchMap((config) => {
+      return testGemini$(config.geminiApiKey).pipe(tap((msg) => (output.textContent += `Gemini: ${msg}\n`)));
+    })
+  );
+
   return {
-    effect$: merge(init$, formChange$).pipe(ignoreElements()),
+    effect$: merge(init$, formChange$, testOnSubmit$).pipe(ignoreElements()),
     config$: config$.asObservable(),
   };
 }
