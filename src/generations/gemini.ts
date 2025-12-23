@@ -1,5 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { Observable } from "rxjs";
+import { z } from "zod";
+import zodToJsonSchema from "zod-to-json-schema";
 import type { ConceptBlueprint } from "../store/types";
 
 export function testGemini$(apiKey: string) {
@@ -27,17 +29,27 @@ export function testGemini$(apiKey: string) {
   });
 }
 
-export function createConcept(apiKey: string): Observable<ConceptBlueprint> {
+const newBluePrintSchema = z.object({
+  description: z.string().describe("One sentence description of the concept"),
+  name: z.string().describe("A short name for the concept"),
+  emoji: z.string().describe("A single emoji representing the concept"),
+});
+
+export function createConcept(props: { apiKey: string; prompt: string }): Observable<ConceptBlueprint> {
   return new Observable<ConceptBlueprint>((subscriber) => {
     const abortController = new AbortController();
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: props.apiKey });
 
     ai.models
       .generateContent({
-        model: "gemini-flash-lite-latest",
-        contents: `Generate a random concept blueprint for a game. Respond in JSON format with the following fields: id (number), emoji (string), name (string), description (string), recipe (array of numbers). Example response: {"id":1,"emoji":"🔥","name":"Fire Elemental","description":"A fiery creature that burns everything in its path.","recipe":[2,3]}.`,
+        model: "gemini-flash-latest",
+
+        contents: props.prompt,
         config: {
+          systemInstruction: `Capture the user provided concept. Respond in JSON format with the following fields: id (number), emoji (string), name (string), description (string). Example response: {"id":1,"emoji":"🔥","name":"Fire Elemental","description":"A fiery creature that burns everything in its path."}.`,
           abortSignal: abortController.signal,
+          responseMimeType: "application/json",
+          responseJsonSchema: zodToJsonSchema(newBluePrintSchema as any),
         },
       })
       .then((res) => {

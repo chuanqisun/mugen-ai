@@ -1,0 +1,6 @@
+concept-card-element {
+  display: block;
+  border: 1px solid var(--btn-border);
+  padding: 4px;
+  border-radius: 4px;
+}

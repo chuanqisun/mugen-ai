@@ -10,3 +10,16 @@ body {
   display: grid;
   grid-template-columns: 1fr auto;
 }
+
+.idea-workbench {
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.idea-grid {
+  padding: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-content: start;
+}
