@@ -1,0 +1,68 @@
+:root {
+  --btn-border: #888;
+  --btn-background: #eaeaea;
+  --btn-border-hover: #555;
+  --btn-background-hover: #d3d3d3;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-size: 14px;
+}
+
+button {
+  padding: 4px;
+  border: 1px solid var(--btn-border);
+  background: var(--btn-background);
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    border-color: var(--btn-border-hover);
+    background: var(--btn-background-hover);
+  }
+}
+
+dialog {
+  padding: 8px;
+  border: 1px solid var(--btn-border);
+  border-radius: 4px;
+  width: calc(100vw - 16px);
+  max-width: 40rem;
+  max-height: 80vh;
+}
+
+dialog:open {
+  margin: auto;
+  display: grid;
+}
+
+form {
+  display: grid;
+  gap: 8px;
+}
+
+input:where([type="text"], [type="password"], [type="number"], [type="email"], [type="url"], [type="search"]) {
+  padding: 4px;
+  border: 1px solid var(--btn-border);
+  border-radius: 4px;
+}
+
+menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
