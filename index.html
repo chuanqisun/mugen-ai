@@ -7,7 +7,14 @@
     <title>mugen-ai</title>
   </head>
   <body>
-    <div id="canvas">canvas</div>
+    <div id="canvas">
+      <form>
+        <div class="field--inline">
+          <input name="newItemInput" type="text" />
+          <button type="submit">Add</button>
+        </div>
+      </form>
+    </div>
     <aside id="sidebar">
       <menu>
         <button commandfor="connection-dialog" command="show-modal">Connect</button>

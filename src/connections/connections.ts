@@ -1,6 +1,6 @@
 import { get, set } from "idb-keyval";
 import { BehaviorSubject, filter, from, fromEvent, ignoreElements, map, merge, switchMap, tap } from "rxjs";
-import { testGemini$ } from "../models/gemini";
+import { testGemini$ } from "../generations/gemini";
 
 export interface Connections {
   geminiApiKey: string;
