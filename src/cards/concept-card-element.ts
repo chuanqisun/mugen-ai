@@ -16,9 +16,9 @@ export class ConceptCardElement extends HTMLElement {
     return newItem;
   }
 
-  static createFromMix(partOne: ConceptCardElement, partTwo: ConceptCardElement) {
+  static createFromMix(...parts: ConceptCardElement[]) {
     const newItem = document.createElement("concept-card-element");
-    newItem.setAttribute("data-sources", `${partOne.id},${partTwo.id}`);
+    newItem.setAttribute("data-sources", parts.map((p) => p.id).join(","));
     newItem.setAttribute("draggable", "true");
     return newItem;
   }
@@ -58,22 +58,30 @@ export class ConceptCardElement extends HTMLElement {
       });
   }
 
-  handleIncomingDrop(other: ConceptCardElement) {
-    console.log({
-      name: other.getAttribute("data-name"),
-      emoji: other.getAttribute("data-emoji"),
-      description: other.title,
-    });
-
-    const offspring = ConceptCardElement.createFromMix(this, other);
+  handleIncomingDrop(others: ConceptCardElement[]) {
+    const offspring = ConceptCardElement.createFromMix(this, ...others);
     this.after(offspring);
   }
 
   handleDragAndDrop() {
     this.addEventListener("dragstart", (e: DragEvent) => {
       try {
-        e.dataTransfer?.setData("application/concept-card-id", this.id);
-        e.dataTransfer?.setData(`application/concept-card-id-${this.id.toLowerCase()}`, "");
+        const isSelected = this.hasAttribute("data-selected");
+        const elements = isSelected
+          ? (Array.from(this.parentElement?.querySelectorAll('concept-card-element[data-selected="true"]') ?? []) as ConceptCardElement[])
+          : [this];
+        const ids = elements.map((el) => el.id);
+
+        e.dataTransfer?.setData("application/concept-card-ids", ids.join(","));
+        ids.forEach((id) => {
+          e.dataTransfer?.setData(`application/concept-card-id-${id.toLowerCase()}`, "");
+        });
+
+        if (elements.length > 1) {
+          const dragImage = this.createDragImage(elements);
+          e.dataTransfer?.setDragImage(dragImage, 0, 0);
+          setTimeout(() => dragImage.remove(), 0);
+        }
       } catch {}
     });
 
@@ -97,14 +105,34 @@ export class ConceptCardElement extends HTMLElement {
     this.addEventListener("drop", (e: DragEvent) => {
       e.preventDefault();
       this.removeAttribute("data-dnd");
-      const id = e.dataTransfer?.getData("application/concept-card-id");
-      if (id && id !== this.id) {
-        const other = document.getElementById(id);
-        if (other && other instanceof ConceptCardElement) {
-          this.handleIncomingDrop(other);
+      const idsStr = e.dataTransfer?.getData("application/concept-card-ids");
+      if (idsStr) {
+        const ids = idsStr.split(",");
+        const others = ids.map((id) => document.getElementById(id)).filter((el): el is ConceptCardElement => el instanceof ConceptCardElement && el !== this);
+
+        if (others.length > 0) {
+          this.handleIncomingDrop(others);
         }
       }
     });
+  }
+
+  createDragImage(elements: HTMLElement[]) {
+    const container = document.createElement("div");
+    container.className = "drag-image-container";
+    container.style.setProperty("--total", elements.length.toString());
+
+    elements.forEach((el, index) => {
+      const card = document.createElement("div");
+      card.textContent = el.textContent;
+      card.className = "drag-image-card";
+      card.style.setProperty("--index", index.toString());
+
+      container.appendChild(card);
+    });
+
+    document.body.appendChild(container);
+    return container;
   }
 
   handleInitialPrompt() {

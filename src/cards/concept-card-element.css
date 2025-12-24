@@ -19,3 +19,31 @@ concept-card-element {
     border-color: transparent;
   }
 }
+
+.drag-image-container {
+  position: absolute;
+  top: -1000px;
+  left: -1000px;
+  width: 160px;
+  display: flex;
+  flex-direction: column;
+  z-index: -1;
+}
+
+.drag-image-card {
+  border: 1px solid var(--card-border);
+  background: var(--card-background);
+  border-radius: 4px;
+  padding: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+  z-index: calc(var(--total) - var(--index));
+
+  & + & {
+    margin-top: -25px;
+  }
+}
