@@ -2,10 +2,24 @@ import { BehaviorSubject, fromEvent, ignoreElements, merge, Observable, shareRep
 
 export interface SelectionProps {
   sandbox: HTMLElement;
+  removeSelectedBtn: HTMLButtonElement;
+  removeOthersBtn: HTMLButtonElement;
 }
 
 export function useSelection(props: SelectionProps) {
   const selection$ = new BehaviorSubject<string[]>([]);
+
+  const removeSelected$ = fromEvent(props.removeSelectedBtn, "click").pipe(
+    tap(() => {
+      props.sandbox.querySelectorAll('concept-card-element[data-selected="true"]').forEach((el) => el.remove());
+    })
+  );
+
+  const removeOthers$ = fromEvent(props.removeOthersBtn, "click").pipe(
+    tap(() => {
+      props.sandbox.querySelectorAll('concept-card-element:not([data-selected="true"])').forEach((el) => el.remove());
+    })
+  );
 
   const click$ = fromEvent<MouseEvent>(props.sandbox, "click").pipe(
     tap((event) => {
@@ -32,7 +46,10 @@ export function useSelection(props: SelectionProps) {
     const getSelectedIds = () => Array.from(props.sandbox.querySelectorAll('concept-card-element[data-selected="true"]')).map((el) => el.id);
 
     const observer = new MutationObserver(() => {
-      subscriber.next(getSelectedIds());
+      const ids = getSelectedIds();
+      props.removeSelectedBtn.disabled = ids.length === 0;
+      props.removeOthersBtn.disabled = ids.length === 0;
+      subscriber.next(ids);
     });
 
     observer.observe(props.sandbox, {
@@ -42,7 +59,10 @@ export function useSelection(props: SelectionProps) {
       childList: true,
     });
 
-    subscriber.next(getSelectedIds());
+    const initialIds = getSelectedIds();
+    props.removeSelectedBtn.disabled = initialIds.length === 0;
+    props.removeOthersBtn.disabled = initialIds.length === 0;
+    subscriber.next(initialIds);
 
     return () => observer.disconnect();
   }).pipe(
@@ -52,13 +72,7 @@ export function useSelection(props: SelectionProps) {
 
   return {
     selection$,
-    removeSelected: () => {
-      props.sandbox.querySelectorAll('concept-card-element[data-selected="true"]').forEach((el) => el.remove());
-    },
-    removeOthers: () => {
-      props.sandbox.querySelectorAll('concept-card-element:not([data-selected="true"])').forEach((el) => el.remove());
-    },
-    effect$: merge(click$, observer$).pipe(ignoreElements()),
+    effect$: merge(click$, observer$, removeSelected$, removeOthers$).pipe(ignoreElements()),
   };
 }
 

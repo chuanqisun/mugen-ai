@@ -21,14 +21,13 @@ async function main() {
 
   const selection = useSelection({
     sandbox,
+    removeSelectedBtn: document.querySelector<HTMLButtonElement>("#remove-selected-btn")!,
+    removeOthersBtn: document.querySelector<HTMLButtonElement>("#remove-others-btn")!,
   });
 
   const details = useDetails({
-    detailsHeader: document.querySelector<HTMLElement>(".details-header")!,
     detailsContent: document.querySelector<HTMLElement>("#details-content")!,
     selection$: selection.selection$,
-    removeSelected: selection.removeSelected,
-    removeOthers: selection.removeOthers,
   });
 
   connections.effect$.subscribe();

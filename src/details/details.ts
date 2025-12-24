@@ -1,40 +1,13 @@
-import { fromEvent, ignoreElements, merge, Observable, tap } from "rxjs";
+import { Observable, tap } from "rxjs";
 
 export interface DetailsProps {
-  detailsHeader: HTMLElement;
   detailsContent: HTMLElement;
   selection$: Observable<string[]>;
-  removeSelected: () => void;
-  removeOthers: () => void;
 }
 
 export function useDetails(props: DetailsProps) {
-  const removeBtn = document.createElement("button");
-  removeBtn.textContent = "Remove";
-
-  const removeOthersBtn = document.createElement("button");
-  removeOthersBtn.textContent = "Remove others";
-
-  const removeClick$ = fromEvent(removeBtn, "click").pipe(
-    tap(() => props.removeSelected()),
-    ignoreElements()
-  );
-
-  const removeOthersClick$ = fromEvent(removeOthersBtn, "click").pipe(
-    tap(() => props.removeOthers()),
-    ignoreElements()
-  );
-
-  const selectionEffect$ = props.selection$.pipe(
+  const effect$ = props.selection$.pipe(
     tap((ids) => {
-      if (ids.length > 0) {
-        if (!removeBtn.parentElement) props.detailsHeader.appendChild(removeBtn);
-        if (!removeOthersBtn.parentElement) props.detailsHeader.appendChild(removeOthersBtn);
-      } else {
-        removeBtn.remove();
-        removeOthersBtn.remove();
-      }
-
       if (ids.length === 0) {
         props.detailsContent.innerHTML = `
           <div class="details-hint">
@@ -68,11 +41,10 @@ export function useDetails(props: DetailsProps) {
           </div>
         `;
       }
-    }),
-    ignoreElements()
+    })
   );
 
   return {
-    effect$: merge(selectionEffect$, removeClick$, removeOthersClick$),
+    effect$,
   };
 }
