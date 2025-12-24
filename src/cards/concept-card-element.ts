@@ -6,7 +6,17 @@ import "./concept-card-element.css";
 
 export class ConceptCardElement extends HTMLElement {
   private static musicBox = new ZenMusicBox({ volume: 1 });
+  private static nextIndex = 0;
   public task$: Observable<any> | null = null;
+  private generationIndex: number | null = null;
+
+  get index(): number | null {
+    return this.generationIndex;
+  }
+
+  constructor() {
+    super();
+  }
 
   static define() {
     if (customElements.get("concept-card-element")) return;
@@ -45,6 +55,10 @@ export class ConceptCardElement extends HTMLElement {
   }
 
   connectedCallback() {
+    if (this.generationIndex === null && !this.classList.contains("placeholder")) {
+      this.generationIndex = ConceptCardElement.nextIndex++;
+      this.setAttribute("data-index", this.generationIndex.toString());
+    }
     this.id = this.getRandomBase62Id(8);
     this.draggable = true;
     this.handleDragAndDrop();
