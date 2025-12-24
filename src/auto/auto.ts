@@ -1,5 +1,5 @@
 import { BehaviorSubject, EMPTY, fromEvent, merge, of, timer } from "rxjs";
-import { catchError, concatMap, finalize, mergeMap, switchMap, tap } from "rxjs/operators";
+import { catchError, filter, finalize, map, mergeMap, switchMap, tap } from "rxjs/operators";
 import { ConceptCardElement } from "../cards/concept-card-element";
 
 interface Action {
@@ -11,6 +11,9 @@ interface Action {
 export function useAuto(options: { autoBtn: HTMLButtonElement; sandbox: HTMLElement; dedupe?: () => void }) {
   const isAuto$ = new BehaviorSubject<boolean>(false);
   const activeActions$ = new BehaviorSubject<string[]>([]);
+  const activeSplits = new Set<string>();
+  const activeMixes = new Set<string>();
+  let activeCount = 0;
 
   const toggle$ = fromEvent(options.autoBtn, "click").pipe(
     tap(() => isAuto$.next(!isAuto$.value)),
@@ -25,14 +28,24 @@ export function useAuto(options: { autoBtn: HTMLButtonElement; sandbox: HTMLElem
     switchMap((active) => {
       if (!active) return EMPTY;
 
-      return timer(0, 2000).pipe(
-        concatMap(() => of(planAction(options.sandbox))),
+      return timer(0, 500).pipe(
+        filter(() => activeCount < 3),
+        map(() => planAction(options.sandbox, activeSplits, activeMixes)),
+        filter((action): action is Action => action !== null),
         mergeMap((action) => {
-          if (!action) return EMPTY;
-
+          activeCount++;
           const actionId = action.description;
           activeActions$.next([...activeActions$.value, actionId]);
           console.log("Active actions:", activeActions$.value);
+
+          const targets = action.targets.map((t) => t.id);
+          let mixKey: string | null = null;
+          if (action.type === "split") {
+            activeSplits.add(targets[0]);
+          } else if (action.type === "mix") {
+            mixKey = getMixKey(targets[0], targets[1]);
+            activeMixes.add(mixKey);
+          }
 
           return executeAction(action, options.sandbox).pipe(
             catchError((err) => {
@@ -40,8 +53,16 @@ export function useAuto(options: { autoBtn: HTMLButtonElement; sandbox: HTMLElem
               return EMPTY;
             }),
             finalize(() => {
+              activeCount--;
               activeActions$.next(activeActions$.value.filter((id) => id !== actionId));
               console.log("Active actions:", activeActions$.value);
+
+              if (action.type === "split") {
+                activeSplits.delete(targets[0]);
+              } else if (action.type === "mix" && mixKey) {
+                activeMixes.delete(mixKey);
+              }
+
               options.dedupe?.();
             })
           );
@@ -55,7 +76,11 @@ export function useAuto(options: { autoBtn: HTMLButtonElement; sandbox: HTMLElem
   return { isAuto$, effect$ };
 }
 
-function planAction(sandbox: HTMLElement): Action | null {
+function getMixKey(id1: string, id2: string) {
+  return [id1, id2].sort().join(":");
+}
+
+function planAction(sandbox: HTMLElement, activeSplits: Set<string>, activeMixes: Set<string>): Action | null {
   const cards = Array.from(sandbox.querySelectorAll("concept-card-element")) as ConceptCardElement[];
   const idleCards = cards.filter((c) => {
     const text = c.textContent || "";
@@ -78,29 +103,37 @@ function planAction(sandbox: HTMLElement): Action | null {
   const strategy = Math.random();
 
   if (idleCards.length >= 2 && strategy > 0.5) {
-    // Mix
-    const idx1 = Math.floor(Math.random() * idleCards.length);
-    let idx2 = Math.floor(Math.random() * idleCards.length);
-    while (idx2 === idx1) {
-      idx2 = Math.floor(Math.random() * idleCards.length);
+    // Try to find a pair that isn't currently mixing
+    const shuffled = [...idleCards].sort(() => Math.random() - 0.5);
+    for (let i = 0; i < shuffled.length; i++) {
+      for (let j = i + 1; j < shuffled.length; j++) {
+        const c1 = shuffled[i];
+        const c2 = shuffled[j];
+        const key = getMixKey(c1.id, c2.id);
+        if (!activeMixes.has(key)) {
+          return {
+            type: "mix",
+            targets: [c1, c2],
+            description: `Mix ${c1.getAttribute("data-name")} + ${c2.getAttribute("data-name")}`,
+          };
+        }
+      }
     }
-    const card1 = idleCards[idx1];
-    const card2 = idleCards[idx2];
-    return {
-      type: "mix",
-      targets: [card1, card2],
-      description: `Mix ${card1.getAttribute("data-name")} + ${card2.getAttribute("data-name")}`,
-    };
-  } else {
-    // Split
-    const idx = Math.floor(Math.random() * idleCards.length);
-    const card = idleCards[idx];
-    return {
-      type: "split",
-      targets: [card],
-      description: `Split ${card.getAttribute("data-name")}`,
-    };
   }
+
+  // Fallback to split or if strategy was split
+  const shuffledForSplit = [...idleCards].sort(() => Math.random() - 0.5);
+  for (const card of shuffledForSplit) {
+    if (!activeSplits.has(card.id)) {
+      return {
+        type: "split",
+        targets: [card],
+        description: `Split ${card.getAttribute("data-name")}`,
+      };
+    }
+  }
+
+  return null;
 }
 
 function executeAction(action: Action, sandbox: HTMLElement) {
