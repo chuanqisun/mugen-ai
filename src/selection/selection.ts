@@ -4,10 +4,38 @@ export interface SelectionProps {
   sandbox: HTMLElement;
   removeSelectedBtn: HTMLButtonElement;
   removeOthersBtn: HTMLButtonElement;
+  dedupeBtn: HTMLButtonElement;
 }
 
 export function useSelection(props: SelectionProps) {
   const selection$ = new BehaviorSubject<string[]>([]);
+
+  const dedupe = () => {
+    const cards = Array.from(props.sandbox.querySelectorAll("concept-card-element")) as HTMLElement[];
+    const groups = new Map<string, HTMLElement[]>();
+
+    cards.forEach((card) => {
+      const name = card.getAttribute("data-name");
+      if (name) {
+        if (!groups.has(name)) {
+          groups.set(name, []);
+        }
+        groups.get(name)!.push(card);
+      }
+    });
+
+    groups.forEach((group) => {
+      if (group.length > 1) {
+        group.sort((a, b) => {
+          const idxA = parseInt(a.getAttribute("data-index") || "0", 10);
+          const idxB = parseInt(b.getAttribute("data-index") || "0", 10);
+          return idxB - idxA;
+        });
+
+        group.slice(1).forEach((card) => card.remove());
+      }
+    });
+  };
 
   const removeSelected$ = fromEvent(props.removeSelectedBtn, "click").pipe(
     tap(() => {
@@ -20,6 +48,8 @@ export function useSelection(props: SelectionProps) {
       props.sandbox.querySelectorAll('concept-card-element:not([data-selected="true"])').forEach((el) => el.remove());
     })
   );
+
+  const dedupe$ = fromEvent(props.dedupeBtn, "click").pipe(tap(() => dedupe()));
 
   const click$ = fromEvent<MouseEvent>(props.sandbox, "click").pipe(
     tap((event) => {
@@ -72,7 +102,8 @@ export function useSelection(props: SelectionProps) {
 
   return {
     selection$,
-    effect$: merge(click$, observer$, removeSelected$, removeOthers$).pipe(ignoreElements()),
+    dedupe,
+    effect$: merge(click$, observer$, removeSelected$, removeOthers$, dedupe$).pipe(ignoreElements()),
   };
 }
 

@@ -8,7 +8,7 @@ interface Action {
   description: string;
 }
 
-export function useAuto(options: { autoBtn: HTMLButtonElement; sandbox: HTMLElement }) {
+export function useAuto(options: { autoBtn: HTMLButtonElement; sandbox: HTMLElement; dedupe?: () => void }) {
   const isAuto$ = new BehaviorSubject<boolean>(false);
   const activeActions$ = new BehaviorSubject<string[]>([]);
 
@@ -42,6 +42,7 @@ export function useAuto(options: { autoBtn: HTMLButtonElement; sandbox: HTMLElem
             finalize(() => {
               activeActions$.next(activeActions$.value.filter((id) => id !== actionId));
               console.log("Active actions:", activeActions$.value);
+              options.dedupe?.();
             })
           );
         }, 3)

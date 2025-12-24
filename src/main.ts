@@ -25,6 +25,7 @@ async function main() {
     sandbox,
     removeSelectedBtn: document.querySelector<HTMLButtonElement>("#remove-selected-btn")!,
     removeOthersBtn: document.querySelector<HTMLButtonElement>("#remove-others-btn")!,
+    dedupeBtn: document.querySelector<HTMLButtonElement>("#dedupe-btn")!,
   });
 
   const details = useDetails({
@@ -35,6 +36,7 @@ async function main() {
   const auto = useAuto({
     autoBtn: document.querySelector<HTMLButtonElement>("#auto-btn")!,
     sandbox,
+    dedupe: selection.dedupe,
   });
 
   connections.effect$.subscribe();
