@@ -104,7 +104,7 @@ function planAction(sandbox: HTMLElement, activeSplits: Set<string>, activeMixes
 
   if (idleCards.length >= 2 && strategy > 0.5) {
     // Try to find a pair that isn't currently mixing
-    const shuffled = [...idleCards].sort(() => Math.random() - 0.5);
+    const shuffled = biasedShuffle(idleCards);
     for (let i = 0; i < shuffled.length; i++) {
       for (let j = i + 1; j < shuffled.length; j++) {
         const c1 = shuffled[i];
@@ -122,7 +122,7 @@ function planAction(sandbox: HTMLElement, activeSplits: Set<string>, activeMixes
   }
 
   // Fallback to split or if strategy was split
-  const shuffledForSplit = [...idleCards].sort(() => Math.random() - 0.5);
+  const shuffledForSplit = biasedShuffle(idleCards);
   for (const card of shuffledForSplit) {
     if (!activeSplits.has(card.id)) {
       return {
@@ -156,4 +156,11 @@ function executeAction(action: Action, sandbox: HTMLElement) {
   }
 
   return EMPTY;
+}
+
+function biasedShuffle<T>(items: T[]): T[] {
+  return items
+    .map((item, index) => ({ item, weight: Math.random() * (index + 1) }))
+    .sort((a, b) => b.weight - a.weight)
+    .map((x) => x.item);
 }
