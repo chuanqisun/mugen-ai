@@ -5,7 +5,7 @@ import { createConcept, mixConcepts, splitConcept, type BasicConcept } from "../
 import "./concept-card-element.css";
 
 export class ConceptCardElement extends HTMLElement {
-  private static musicBox = new ZenMusicBox({ volume: 1 });
+  private static musicBox = new ZenMusicBox({ volume: 0.5 });
   private static nextIndex = 0;
   public task$: Observable<any> | null = null;
   private generationIndex: number | null = null;
