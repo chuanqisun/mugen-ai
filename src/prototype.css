@@ -5,6 +5,8 @@
   --btn-border-disabled: #ccc;
   --btn-background-hover: #d3d3d3;
   --btn-background-disabled: #f5f5f5;
+  --input-background-disabled: #f0f0f0;
+  --input-border-disabled: #ccc;
   --divider-color: #ccc;
 }
 
@@ -59,6 +61,11 @@ input:where([type="text"], [type="password"], [type="number"], [type="email"], [
   padding: 4px;
   border: 1px solid var(--btn-border);
   border-radius: 4px;
+
+  &:disabled {
+    background: var(--input-background-disabled);
+    border-color: var(--input-border-disabled);
+  }
 }
 
 menu {

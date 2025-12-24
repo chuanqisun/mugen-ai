@@ -21,13 +21,21 @@ export function useConnections(props: UseConnectionsProps) {
     tap((config) => renderConfig(config, props.connectionForm))
   );
 
-  const formChange$ = fromEvent(props.connectionForm, "change").pipe(map(getConfigObject(config$)), switchMap(saveConfig));
+  const formChange$ = fromEvent(props.connectionForm, "change").pipe(
+    map(getConfigObject(config$)),
+    tap((config) => config$.next(config)),
+    switchMap(saveConfig)
+  );
 
   const testOnSubmit$ = fromEvent(props.connectionForm, "submit").pipe(
     tap((e) => e.preventDefault()),
     map(getConfigObject(config$)),
+    tap((config) => config$.next(config)),
     switchMap((config) => {
-      return testGemini$(config.geminiApiKey).pipe(tap((msg) => (output.textContent += `Gemini: ${msg}\n`)));
+      return from(saveConfig(config)).pipe(
+        switchMap(() => testGemini$(config.geminiApiKey)),
+        tap((msg) => (output.textContent += `Gemini: ${msg}\n`))
+      );
     })
   );
 
@@ -61,7 +69,7 @@ function getConfigObject(config$: BehaviorSubject<Connections>) {
     const form = (e.target as HTMLElement).closest<HTMLFormElement>("form")!;
     const formData = new FormData(form);
     const mutableConfig: Connections = { ...config$.value };
-    const formDataObject = Object.fromEntries([...formData.entries()].filter(([_, v]) => v !== null && typeof v === "string" && v.trim() !== ""));
+    const formDataObject = Object.fromEntries([...formData.entries()].filter(([_, v]) => v !== null && typeof v === "string"));
     const mergedConfig = { ...mutableConfig, ...formDataObject };
     return mergedConfig;
   };

@@ -17,6 +17,7 @@ async function main() {
   const creation = useCreation({
     creationForm: document.querySelector<HTMLFormElement>("#creation-form")!,
     sandbox,
+    config$: connections.config$,
   });
 
   const selection = useSelection({
