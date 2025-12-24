@@ -1,6 +1,6 @@
 import { tap } from "rxjs";
 import { config$ } from "../connections/connections";
-import { createConcept } from "../generations/gemini";
+import { createConcept, mixConcepts, type MixableConcept } from "../generations/gemini";
 import "./concept-card-element.css";
 
 export class ConceptCardElement extends HTMLElement {
@@ -16,11 +16,19 @@ export class ConceptCardElement extends HTMLElement {
     return newItem;
   }
 
+  static createFromMix(partOne: ConceptCardElement, partTwo: ConceptCardElement) {
+    const newItem = document.createElement("concept-card-element");
+    newItem.setAttribute("data-sources", `${partOne.id},${partTwo.id}`);
+    newItem.setAttribute("draggable", "true");
+    return newItem;
+  }
+
   connectedCallback() {
     this.id = this.getRandomBase62Id(8);
     this.draggable = true;
     this.handleDragAndDrop();
     this.handleInitialPrompt();
+    this.handleMix();
   }
 
   handleIncomingDrop(other: ConceptCardElement) {
@@ -30,8 +38,7 @@ export class ConceptCardElement extends HTMLElement {
       description: other.title,
     });
 
-    const offspring = ConceptCardElement.createFromPrompt(`Merge two concepts: "${this.getAttribute("data-name")}" and "${other.getAttribute("data-name")}"`);
-
+    const offspring = ConceptCardElement.createFromMix(this, other);
     this.after(offspring);
   }
 
@@ -77,11 +84,47 @@ export class ConceptCardElement extends HTMLElement {
     const prompt = this.getAttribute("data-prompt");
     if (!prompt) return;
 
+    if (!config$.value.geminiApiKey) throw new Error("Gemini API key is not configured.");
+
     this.textContent = "Generating...";
+
+    createConcept({ apiKey: config$.value.geminiApiKey, prompt })
+      .pipe(
+        tap((res) => {
+          this.setAttribute("data-emoji", res.emoji);
+          this.setAttribute("data-name", res.name);
+          this.textContent = `${res.emoji} ${res.name}`;
+          this.title = res.description;
+        })
+      )
+      .subscribe();
+  }
+
+  handleMix() {
+    const sources = this.getAttribute("data-sources")?.split(",") ?? [];
+    if (!sources.length) return;
 
     if (!config$.value.geminiApiKey) throw new Error("Gemini API key is not configured.");
 
-    createConcept({ apiKey: config$.value.geminiApiKey, prompt })
+    this.textContent = "Mixing...";
+
+    const validSources = sources
+      .map((id) => {
+        const element = document.getElementById(id);
+        if (element && element instanceof ConceptCardElement) {
+          return {
+            name: element.getAttribute("data-name"),
+            description: element.title,
+          };
+        }
+        return null;
+      })
+      .filter((c): c is MixableConcept => c?.name !== undefined && c?.description !== undefined);
+
+    mixConcepts({
+      apiKey: config$.value.geminiApiKey,
+      concepts: validSources,
+    })
       .pipe(
         tap((res) => {
           this.setAttribute("data-emoji", res.emoji);
