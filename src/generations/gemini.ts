@@ -91,7 +91,7 @@ export function mixConcepts(props: { apiKey: string; concepts: MixableConcept[] 
           thinkingConfig: {
             thinkingBudget: 0,
           },
-          systemInstruction: `Create a new concept by mixing the provided concepts. Focus on deep conceptual blending rather than shallow semantic mixing. The result concept name should not increase in length. Respond in JSON format with the following fields: emoji (string), name (string), description (string). Example response: {"emoji":"🌪️","name":"Storm","description":"A swirling entity that commands wind and rain."}.`,
+          systemInstruction: `Create a new concept by mixing the provided concepts. Focus on deep conceptual blending rather than shallow semantic mixing. The result concept name should not increase in length but instead, align with established concepts. Respond in JSON format with the following fields: emoji (string), name (string), description (string). Example response: {"emoji":"🌪️","name":"Storm","description":"A swirling entity that commands wind and rain."}.`,
           abortSignal: abortController.signal,
           responseMimeType: "application/json",
           responseJsonSchema: zodToJsonSchema(newBluePrintSchema as any),
