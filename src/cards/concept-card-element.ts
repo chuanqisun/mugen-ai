@@ -1,4 +1,4 @@
-import { buffer, debounceTime, filter, fromEvent, tap } from "rxjs";
+import { Observable, buffer, debounceTime, filter, finalize, fromEvent, tap } from "rxjs";
 import { ZenMusicBox } from "../audio/zen-music-box";
 import { config$ } from "../connections/connections";
 import { createConcept, mixConcepts, splitConcept, type BasicConcept } from "../generations/gemini";
@@ -6,28 +6,29 @@ import "./concept-card-element.css";
 
 export class ConceptCardElement extends HTMLElement {
   private static musicBox = new ZenMusicBox({ volume: 1 });
+  public task$: Observable<any> | null = null;
 
   static define() {
     if (customElements.get("concept-card-element")) return;
     customElements.define("concept-card-element", ConceptCardElement);
   }
 
-  static createFromPrompt(prompt: string) {
-    const newItem = document.createElement("concept-card-element");
+  static createFromPrompt(prompt: string): ConceptCardElement {
+    const newItem = document.createElement("concept-card-element") as ConceptCardElement;
     newItem.setAttribute("data-prompt", prompt);
     newItem.setAttribute("draggable", "true");
     return newItem;
   }
 
-  static createFromMix(...parts: ConceptCardElement[]) {
-    const newItem = document.createElement("concept-card-element");
+  static createFromMix(...parts: ConceptCardElement[]): ConceptCardElement {
+    const newItem = document.createElement("concept-card-element") as ConceptCardElement;
     newItem.setAttribute("data-sources", parts.map((p) => p.id).join(","));
     newItem.setAttribute("draggable", "true");
     return newItem;
   }
 
-  static createFromConcept(concept: { name: string; description: string; emoji: string }) {
-    const newItem = document.createElement("concept-card-element");
+  static createFromConcept(concept: { name: string; description: string; emoji: string }): ConceptCardElement {
+    const newItem = document.createElement("concept-card-element") as ConceptCardElement;
     newItem.setAttribute("data-name", concept.name);
     newItem.setAttribute("data-emoji", concept.emoji);
     newItem.title = concept.description;
@@ -36,8 +37,8 @@ export class ConceptCardElement extends HTMLElement {
     return newItem;
   }
 
-  static createPlaceholder(text: string = "Splitting...") {
-    const newItem = document.createElement("concept-card-element");
+  static createPlaceholder(text: string = "Splitting..."): ConceptCardElement {
+    const newItem = document.createElement("concept-card-element") as ConceptCardElement;
     newItem.textContent = text;
     newItem.classList.add("placeholder");
     return newItem;
@@ -47,8 +48,16 @@ export class ConceptCardElement extends HTMLElement {
     this.id = this.getRandomBase62Id(8);
     this.draggable = true;
     this.handleDragAndDrop();
-    this.handleInitialPrompt();
-    this.handleMix();
+
+    const promptTask = this.handleInitialPrompt();
+    if (promptTask) this.task$ = promptTask;
+
+    const mixTask = this.handleMix();
+    if (mixTask) this.task$ = mixTask;
+
+    if (this.task$) {
+      this.task$.subscribe();
+    }
 
     const mousedown$ = fromEvent(this, "mousedown");
     mousedown$
@@ -57,7 +66,7 @@ export class ConceptCardElement extends HTMLElement {
         filter((events) => events.length >= 2)
       )
       .subscribe(() => {
-        this.handleSplit();
+        this.handleSplit().subscribe();
       });
   }
 
@@ -140,28 +149,31 @@ export class ConceptCardElement extends HTMLElement {
 
   handleInitialPrompt() {
     const prompt = this.getAttribute("data-prompt");
-    if (!prompt) return;
+    if (!prompt) return null;
 
     if (!config$.value.geminiApiKey) throw new Error("Gemini API key is not configured.");
 
     this.textContent = "Generating...";
 
-    createConcept({ apiKey: config$.value.geminiApiKey, prompt })
-      .pipe(
-        tap((res) => {
-          this.setAttribute("data-emoji", res.emoji);
-          this.setAttribute("data-name", res.name);
-          this.textContent = `${res.emoji} ${res.name}`;
-          this.title = res.description;
-          ConceptCardElement.musicBox.playAscend();
-        })
-      )
-      .subscribe();
+    return createConcept({ apiKey: config$.value.geminiApiKey, prompt }).pipe(
+      tap((res) => {
+        this.setAttribute("data-emoji", res.emoji);
+        this.setAttribute("data-name", res.name);
+        this.textContent = `${res.emoji} ${res.name}`;
+        this.title = res.description;
+        ConceptCardElement.musicBox.playAscend();
+      }),
+      finalize(() => {
+        if (this.textContent === "Generating...") {
+          this.remove();
+        }
+      })
+    );
   }
 
   handleMix() {
     const sources = this.getAttribute("data-sources")?.split(",") ?? [];
-    if (!sources.length) return;
+    if (!sources.length) return null;
 
     if (!config$.value.geminiApiKey) throw new Error("Gemini API key is not configured.");
 
@@ -180,20 +192,23 @@ export class ConceptCardElement extends HTMLElement {
       })
       .filter((c): c is BasicConcept => c?.name !== undefined && c?.description !== undefined);
 
-    mixConcepts({
+    return mixConcepts({
       apiKey: config$.value.geminiApiKey,
       concepts: validSources,
-    })
-      .pipe(
-        tap((res) => {
-          this.setAttribute("data-emoji", res.emoji);
-          this.setAttribute("data-name", res.name);
-          this.textContent = `${res.emoji} ${res.name}`;
-          this.title = res.description;
-          ConceptCardElement.musicBox.playAscend();
-        })
-      )
-      .subscribe();
+    }).pipe(
+      tap((res) => {
+        this.setAttribute("data-emoji", res.emoji);
+        this.setAttribute("data-name", res.name);
+        this.textContent = `${res.emoji} ${res.name}`;
+        this.title = res.description;
+        ConceptCardElement.musicBox.playAscend();
+      }),
+      finalize(() => {
+        if (this.textContent === "Mixing...") {
+          this.remove();
+        }
+      })
+    );
   }
 
   handleSplit() {
@@ -202,32 +217,27 @@ export class ConceptCardElement extends HTMLElement {
     const name = this.getAttribute("data-name");
     const description = this.title;
 
-    if (!name || !description) return;
+    if (!name || !description) return new Observable((subscriber) => subscriber.complete());
 
     let placeholder = ConceptCardElement.createPlaceholder("Splitting...");
     this.after(placeholder);
 
-    splitConcept({
+    return splitConcept({
       apiKey: config$.value.geminiApiKey,
       concept: { name, description },
-    }).subscribe({
-      next: (concept) => {
+    }).pipe(
+      tap((concept) => {
         const newCard = ConceptCardElement.createFromConcept(concept);
         placeholder.replaceWith(newCard);
         ConceptCardElement.musicBox.playDescend();
 
         placeholder = ConceptCardElement.createPlaceholder("Splitting...");
         newCard.after(placeholder);
-      },
-      complete: () => {
+      }),
+      finalize(() => {
         placeholder.remove();
-      },
-      error: (err) => {
-        console.error(err);
-        placeholder.textContent = "Error splitting";
-        setTimeout(() => placeholder.remove(), 2000);
-      },
-    });
+      })
+    );
   }
 
   getRandomBase62Id(length: number): string {

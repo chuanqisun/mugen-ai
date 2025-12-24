@@ -161,3 +161,79 @@ export function splitConcept(props: { apiKey: string; concept: BasicConcept }): 
     return () => abortController.abort();
   });
 }
+
+export type PlannedAction = CreateAction | MixAction | SplitAction;
+
+export interface CreateAction {
+  type: "create";
+  prompt: string;
+}
+
+export interface MixAction {
+  type: "mix";
+  conceptNames: string[];
+}
+
+export interface SplitAction {
+  type: "split";
+  conceptName: string;
+}
+
+const plannedActionSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("create"),
+    prompt: z.string().describe("A prompt for a new concept"),
+  }),
+  z.object({
+    type: z.literal("mix"),
+    conceptNames: z.array(z.string()).describe("The names of the concepts to mix"),
+  }),
+  z.object({
+    type: z.literal("split"),
+    conceptName: z.string().describe("The name of the concept to split"),
+  }),
+]);
+
+export function planAction(props: { apiKey: string; conceptNames: string[] }): Observable<PlannedAction> {
+  return new Observable<PlannedAction>((subscriber) => {
+    const abortController = new AbortController();
+    const ai = new GoogleGenAI({ apiKey: props.apiKey });
+
+    const conceptList = props.conceptNames.join(", ");
+
+    ai.models
+      .generateContent({
+        model: "gemini-3-flash-preview",
+        contents: `Available concepts: ${conceptList}`,
+        config: {
+          thinkingConfig: {
+            thinkingBudget: 0,
+          },
+          systemInstruction: `You are an AI agent playing a concept mixing game. Your goal is to discover new and interesting concepts. 
+Based on the list of available concepts, decide on the next action:
+1. "create": Propose a completely new starting concept.
+2. "mix": Select two existing concepts to combine into something new.
+3. "split": Select one existing concept to decompose into its fundamental components.
+
+Respond in JSON format.`,
+          abortSignal: abortController.signal,
+          responseMimeType: "application/json",
+          responseJsonSchema: zodToJsonSchema(plannedActionSchema as any),
+        },
+      })
+      .then((res) => {
+        try {
+          const action: PlannedAction = JSON.parse(res.text ?? "");
+          subscriber.next(action);
+        } catch (e) {
+          subscriber.error(new Error("Failed to parse planned action from response."));
+        }
+      })
+      .catch((err) => subscriber.error(err))
+      .finally(() => {
+        subscriber.complete();
+      });
+
+    return () => abortController.abort();
+  });
+}

@@ -1,3 +1,4 @@
+import { useAuto } from "./auto/auto";
 import { ConceptCardElement } from "./cards/concept-card-element";
 import { useConnections } from "./connections/connections";
 import { useCreation } from "./creation/creation";
@@ -31,10 +32,16 @@ async function main() {
     selection$: selection.selection$,
   });
 
+  const auto = useAuto({
+    autoBtn: document.querySelector<HTMLButtonElement>("#auto-btn")!,
+    sandbox,
+  });
+
   connections.effect$.subscribe();
   creation.effect$.subscribe();
   selection.effect$.subscribe();
   details.effect$.subscribe();
+  auto.effect$.subscribe();
 }
 
 main();
