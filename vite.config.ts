@@ -5,7 +5,7 @@ import { defineConfig } from "vite";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  base: "/computational-design-lab/",
+  base: "/mugen-ai/",
   build: {
     rollupOptions: {
       input: {
