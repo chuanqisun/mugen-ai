@@ -12,4 +12,10 @@ concept-card-element {
   &[data-dnd="droppable"] {
     background-color: var(--drop-target-background);
   }
+
+  &[data-selected="true"] {
+    outline: 2px solid var(--accent-color);
+    outline-offset: -1px;
+    border-color: transparent;
+  }
 }
