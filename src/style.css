@@ -14,8 +14,33 @@ body {
 body {
   font-family: system-ui;
   font-size: 16px;
-  display: grid;
-  grid-template-columns: 1fr auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.idea-header {
+  padding: 8px;
+  border-bottom: 1px solid var(--divider-color);
+
+  input {
+    flex: 1;
+  }
+}
+
+.idea-workbench {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.idea-grid {
+  flex: 1;
+  padding: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-content: start;
+  overflow-y: auto;
 }
 
 .details-pane {
@@ -48,30 +73,6 @@ body {
   flex-direction: column;
   gap: 8px;
   color: var(--hint-color);
-}
-
-.idea-workbench {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 8px;
-  min-height: 0;
-}
-
-.idea-header {
-  padding: 8px 8px 4px 8px;
-
-  input {
-    flex: 1;
-  }
-}
-
-.idea-grid {
-  padding: 4px 8px 8px 8px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-content: start;
-  overflow-y: auto;
 }
 
 .tip-list {
