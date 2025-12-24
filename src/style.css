@@ -1,5 +1,9 @@
 @import "./prototype.css";
 
+:root {
+  --drop-target-background: #e0f7fa;
+}
+
 html,
 body {
   height: 100%;

@@ -1,4 +1,5 @@
 import { filter, fromEvent, ignoreElements, merge, tap } from "rxjs";
+import { ConceptCardElement } from "../cards/concept-card-element";
 
 export interface CreationProps {
   creationForm: HTMLFormElement;
@@ -10,8 +11,7 @@ export function useCreation(props: CreationProps) {
     tap((e) => e.preventDefault()),
     filter(() => inputElement.value.trim().length > 0),
     tap(() => {
-      const newItem = document.createElement("concept-card-element");
-      newItem.setAttribute("data-prompt", inputElement.value.trim());
+      const newItem = ConceptCardElement.createFromPrompt(inputElement.value.trim());
       inputElement.value = "";
       props.sandbox.appendChild(newItem);
     })

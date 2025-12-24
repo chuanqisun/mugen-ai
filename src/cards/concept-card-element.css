@@ -3,4 +3,13 @@ concept-card-element {
   border: 1px solid var(--btn-border);
   padding: 4px;
   border-radius: 4px;
+  cursor: grab;
+
+  &:hover {
+    border-color: var(--btn-border-hover);
+  }
+
+  &[data-dnd="droppable"] {
+    background-color: var(--drop-target-background);
+  }
 }
