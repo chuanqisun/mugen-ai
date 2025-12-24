@@ -43,9 +43,11 @@ export function createConcept(props: { apiKey: string; prompt: string }): Observ
     ai.models
       .generateContent({
         model: "gemini-flash-latest",
-
         contents: props.prompt,
         config: {
+          thinkingConfig: {
+            thinkingBudget: 0,
+          },
           systemInstruction: `Capture the user provided concept. Respond in JSON format with the following fields: id (number), emoji (string), name (string), description (string). Example response: {"id":1,"emoji":"🔥","name":"Fire Elemental","description":"A fiery creature that burns everything in its path."}.`,
           abortSignal: abortController.signal,
           responseMimeType: "application/json",
