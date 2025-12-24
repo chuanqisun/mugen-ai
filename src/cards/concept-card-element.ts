@@ -1,9 +1,12 @@
 import { buffer, debounceTime, filter, fromEvent, tap } from "rxjs";
+import { ZenMusicBox } from "../audio/zen-music-box";
 import { config$ } from "../connections/connections";
 import { createConcept, mixConcepts, splitConcept, type BasicConcept } from "../generations/gemini";
 import "./concept-card-element.css";
 
 export class ConceptCardElement extends HTMLElement {
+  private static musicBox = new ZenMusicBox({ volume: 1 });
+
   static define() {
     if (customElements.get("concept-card-element")) return;
     customElements.define("concept-card-element", ConceptCardElement);
@@ -150,6 +153,7 @@ export class ConceptCardElement extends HTMLElement {
           this.setAttribute("data-name", res.name);
           this.textContent = `${res.emoji} ${res.name}`;
           this.title = res.description;
+          ConceptCardElement.musicBox.playAscend();
         })
       )
       .subscribe();
@@ -186,6 +190,7 @@ export class ConceptCardElement extends HTMLElement {
           this.setAttribute("data-name", res.name);
           this.textContent = `${res.emoji} ${res.name}`;
           this.title = res.description;
+          ConceptCardElement.musicBox.playAscend();
         })
       )
       .subscribe();
@@ -209,6 +214,7 @@ export class ConceptCardElement extends HTMLElement {
       next: (concept) => {
         const newCard = ConceptCardElement.createFromConcept(concept);
         placeholder.replaceWith(newCard);
+        ConceptCardElement.musicBox.playDescend();
 
         placeholder = ConceptCardElement.createPlaceholder("Splitting...");
         newCard.after(placeholder);
