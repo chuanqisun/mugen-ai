@@ -8,18 +8,19 @@
   </head>
   <body>
     <div class="idea-workbench">
-      <form id="creation-form">
+      <form class="idea-header" id="creation-form">
         <div class="field--inline">
-          <input name="newItemInput" type="text" />
+          <input name="newItemInput" type="text" autofocus />
           <button type="submit">Add</button>
         </div>
       </form>
       <div class="idea-grid" id="sandbox"></div>
     </div>
-    <aside id="sidebar">
-      <menu>
+    <aside class="details-pane" id="sidebar">
+      <menu class="details-header">
         <button commandfor="connection-dialog" command="show-modal">Connect</button>
       </menu>
+      <div class="details-content" id="details-content">Select a concept to see details</div>
     </aside>
     <dialog id="connection-dialog">
       <form id="connection-form" method="dialog">

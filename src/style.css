@@ -15,15 +15,41 @@ body {
   grid-template-columns: 1fr auto;
 }
 
+.details-pane {
+  border-left: 1px solid var(--divider-color);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 8px;
+  width: 30vw;
+  max-width: 40rem;
+  box-sizing: border-box;
+}
+
+.details-header {
+  padding: 8px 8px 4px 8px;
+}
+
+.details-content {
+  padding: 4px 8px 8px 8px;
+  overflow-y: auto;
+}
+
 .idea-workbench {
   display: grid;
   grid-template-rows: auto 1fr;
+  gap: 8px;
+  min-height: 0;
+}
+
+.idea-header {
+  padding: 8px 8px 4px 8px;
 }
 
 .idea-grid {
-  padding: 8px;
+  padding: 4px 8px 8px 8px;
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
   align-content: start;
+  overflow-y: auto;
 }
