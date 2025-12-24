@@ -20,20 +20,16 @@ body {
 
 .details-pane {
   border-left: 1px solid var(--divider-color);
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 8px;
+  display: flex;
+  flex-direction: column;
   width: 30vw;
   max-width: 32rem;
   box-sizing: border-box;
 }
 
-.details-header {
-  padding: 8px 8px 4px 8px;
-}
-
 .details-content {
-  padding: 4px 8px 8px 8px;
+  flex: 1;
+  padding: 8px;
   overflow-y: auto;
 }
 
@@ -63,6 +59,10 @@ body {
 
 .idea-header {
   padding: 8px 8px 4px 8px;
+
+  input {
+    flex: 1;
+  }
 }
 
 .idea-grid {

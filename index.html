@@ -13,15 +13,13 @@
           <button type="button" commandfor="connection-dialog" command="show-modal">Connect</button>
           <input name="newItemInput" type="text" autofocus />
           <button type="submit">Add</button>
+          <button id="remove-selected-btn" type="button" disabled>Remove</button>
+          <button id="remove-others-btn" type="button" disabled>Remove others</button>
         </div>
       </form>
       <div class="idea-grid" id="sandbox"></div>
     </div>
     <aside class="details-pane" id="sidebar">
-      <menu class="details-header">
-        <button id="remove-selected-btn" disabled>Remove</button>
-        <button id="remove-others-btn" disabled>Remove others</button>
-      </menu>
       <div class="details-content" id="details-content">Select a concept to see details</div>
     </aside>
     <dialog id="connection-dialog">
