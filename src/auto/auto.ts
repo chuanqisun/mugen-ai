@@ -19,7 +19,7 @@ export function useAuto(options: { autoBtn: HTMLButtonElement; sandbox: HTMLElem
     tap(() => isAuto$.next(!isAuto$.value)),
     tap((_) => {
       const active = isAuto$.value;
-      options.autoBtn.textContent = `Auto: ${active ? "on" : "off"}`;
+      options.autoBtn.textContent = active ? "Stop discover" : "Start discover";
       options.autoBtn.classList.toggle("active", active);
     })
   );
