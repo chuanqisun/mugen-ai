@@ -56,7 +56,7 @@ export function useSelection(props: SelectionProps) {
       props.sandbox.querySelectorAll('concept-card-element[data-selected="true"]').forEach((el) => el.remove());
     },
     removeOthers: () => {
-      props.sandbox.querySelectorAll("concept-card-element:not([data-selected=\"true\"])").forEach((el) => el.remove());
+      props.sandbox.querySelectorAll('concept-card-element:not([data-selected="true"])').forEach((el) => el.remove());
     },
     effect$: merge(click$, observer$).pipe(ignoreElements()),
   };
