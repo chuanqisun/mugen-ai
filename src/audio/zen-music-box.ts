@@ -1,8 +1,6 @@
 export class ZenMusicBox {
-  private readonly pentatonicScale = [
-    65.41, 73.42, 82.41, 98.0, 110.0, 130.81, 146.83, 164.81, 196.0, 220.0, 261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.25, 783.99, 880.0, 1046.5,
-    1174.66, 1318.51,
-  ];
+  // Narrowed range: C3 (130.81 Hz) to A5 (880.0 Hz) for more comfortable listening
+  private readonly pentatonicScale = [130.81, 146.83, 164.81, 196.0, 220.0, 261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.25, 783.99, 880.0];
 
   private triadIndices = [5, 8, 12];
   private audioContext?: AudioContext;
@@ -69,14 +67,28 @@ export class ZenMusicBox {
     masterGain.gain.setValueAtTime(this.volume, now);
     masterGain.connect(this.audioContext.destination);
 
+    // Calculate frequency-dependent volumes and normalize to prevent clipping
+    const adjustedVolumes = this.triadIndices.map((scaleIndex, i) => {
+      const frequency = this.pentatonicScale[scaleIndex];
+      // Gentler frequency compensation using equal-loudness curve approximation
+      const frequencyBoost = Math.pow(440 / frequency, 0.25);
+      return volumes[i] * frequencyBoost;
+    });
+
+    // Normalize so the sum doesn't exceed safe threshold (0.6 for headroom)
+    const totalVolume = adjustedVolumes.reduce((sum, v) => sum + v, 0);
+    const safeThreshold = 0.6;
+    const normalizationFactor = totalVolume > safeThreshold ? safeThreshold / totalVolume : 1.0;
+
     this.triadIndices.forEach((scaleIndex, i) => {
       const oscillator = this.audioContext!.createOscillator();
       const noteGain = this.audioContext!.createGain();
 
       oscillator.type = "sine";
-      oscillator.frequency.setValueAtTime(this.pentatonicScale[scaleIndex], now);
+      const frequency = this.pentatonicScale[scaleIndex];
+      oscillator.frequency.setValueAtTime(frequency, now);
 
-      const peakVolume = volumes[i];
+      const peakVolume = adjustedVolumes[i] * normalizationFactor;
 
       noteGain.gain.setValueAtTime(0, now);
       noteGain.gain.linearRampToValueAtTime(peakVolume, now + attack);
