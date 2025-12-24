@@ -3,6 +3,7 @@
 :root {
   --drop-target-background: #e0f7fa;
   --accent-color: #007bff;
+  --warm-accent-color: #ff9800;
   --hint-color: #666;
   --card-border: var(--btn-border);
   --card-background: #ffffff;

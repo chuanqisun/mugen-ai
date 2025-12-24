@@ -19,6 +19,11 @@ concept-card-element {
     outline-offset: -1px;
     border-color: transparent;
   }
+
+  &[data-loading="true"],
+  &.placeholder {
+    opacity: 0.5;
+  }
 }
 
 .drag-image-container {

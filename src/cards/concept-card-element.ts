@@ -9,6 +9,7 @@ export class ConceptCardElement extends HTMLElement {
   private static nextIndex = 0;
   public task$: Observable<any> | null = null;
   private generationIndex: number | null = null;
+  private currentAnimation: Animation | null = null;
 
   get index(): number | null {
     return this.generationIndex;
@@ -168,14 +169,17 @@ export class ConceptCardElement extends HTMLElement {
     if (!config$.value.geminiApiKey) throw new Error("Gemini API key is not configured.");
 
     this.textContent = "Generating...";
+    this.setAttribute("data-loading", "true");
 
     return createConcept({ apiKey: config$.value.geminiApiKey, prompt }).pipe(
       tap((res) => {
+        this.removeAttribute("data-loading");
         this.setAttribute("data-emoji", res.emoji);
         this.setAttribute("data-name", res.name);
         this.textContent = `${res.emoji} ${res.name}`;
         this.title = res.description;
         ConceptCardElement.musicBox.playAscend();
+        this.flash("--warm-accent-color", 3000);
       }),
       finalize(() => {
         if (this.textContent === "Generating...") {
@@ -192,11 +196,13 @@ export class ConceptCardElement extends HTMLElement {
     if (!config$.value.geminiApiKey) throw new Error("Gemini API key is not configured.");
 
     this.textContent = "Mixing...";
+    this.setAttribute("data-loading", "true");
 
     const validSources = sources
       .map((id) => {
         const element = document.getElementById(id);
         if (element && element instanceof ConceptCardElement) {
+          element.flash("--accent-color", 1000);
           return {
             name: element.getAttribute("data-name"),
             description: element.title,
@@ -211,11 +217,13 @@ export class ConceptCardElement extends HTMLElement {
       concepts: validSources,
     }).pipe(
       tap((res) => {
+        this.removeAttribute("data-loading");
         this.setAttribute("data-emoji", res.emoji);
         this.setAttribute("data-name", res.name);
         this.textContent = `${res.emoji} ${res.name}`;
         this.title = res.description;
         ConceptCardElement.musicBox.playAscend();
+        this.flash("--warm-accent-color", 3000);
       }),
       finalize(() => {
         if (this.textContent === "Mixing...") {
@@ -233,6 +241,8 @@ export class ConceptCardElement extends HTMLElement {
 
     if (!name || !description) return new Observable((subscriber) => subscriber.complete());
 
+    this.flash("--accent-color", 1000);
+
     let placeholder = ConceptCardElement.createPlaceholder("Splitting...");
     this.after(placeholder);
 
@@ -244,6 +254,7 @@ export class ConceptCardElement extends HTMLElement {
         const newCard = ConceptCardElement.createFromConcept(concept);
         placeholder.replaceWith(newCard);
         ConceptCardElement.musicBox.playDescend();
+        newCard.flash("--warm-accent-color", 3000);
 
         placeholder = ConceptCardElement.createPlaceholder("Splitting...");
         newCard.after(placeholder);
@@ -261,5 +272,23 @@ export class ConceptCardElement extends HTMLElement {
       result[i] = chars[Math.floor(Math.random() * 62)];
     }
     return result.join("");
+  }
+
+  public flash(colorVar: string, duration: number) {
+    if (this.currentAnimation) {
+      this.currentAnimation.cancel();
+    }
+
+    this.currentAnimation = this.animate(
+      [{ backgroundColor: `color-mix(in srgb, var(${colorVar}), transparent 50%)` }, { backgroundColor: "var(--card-background)" }],
+      {
+        duration,
+        easing: "ease-out",
+      }
+    );
+
+    this.currentAnimation.onfinish = () => {
+      this.currentAnimation = null;
+    };
   }
 }
