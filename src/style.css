@@ -3,6 +3,7 @@
 :root {
   --drop-target-background: #e0f7fa;
   --accent-color: #007bff;
+  --hint-color: #666;
 }
 
 html,
@@ -12,6 +13,7 @@ body {
 
 body {
   font-family: system-ui;
+  font-size: 16px;
   display: grid;
   grid-template-columns: 1fr auto;
 }
@@ -22,7 +24,7 @@ body {
   grid-template-rows: auto 1fr;
   gap: 8px;
   width: 30vw;
-  max-width: 40rem;
+  max-width: 32rem;
   box-sizing: border-box;
 }
 
@@ -33,6 +35,23 @@ body {
 .details-content {
   padding: 4px 8px 8px 8px;
   overflow-y: auto;
+}
+
+.details-item {
+  display: grid;
+  gap: 8px;
+
+  h2 {
+    font-size: 1.25rem;
+  }
+}
+
+.details-hint {
+  font-style: italic;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--hint-color);
 }
 
 .idea-workbench {
@@ -53,4 +72,9 @@ body {
   gap: 4px;
   align-content: start;
   overflow-y: auto;
+}
+
+.tip-list {
+  display: grid;
+  gap: 4px;
 }

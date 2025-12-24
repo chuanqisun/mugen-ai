@@ -1,4 +1,4 @@
-import { BehaviorSubject, distinctUntilChanged, fromEvent, ignoreElements, merge, Observable, shareReplay, tap } from "rxjs";
+import { BehaviorSubject, fromEvent, ignoreElements, merge, Observable, shareReplay, tap } from "rxjs";
 
 export interface SelectionProps {
   sandbox: HTMLElement;
@@ -38,7 +38,7 @@ export function useSelection(props: SelectionProps) {
     observer.observe(props.sandbox, {
       attributes: true,
       subtree: true,
-      attributeFilter: ["data-selected"],
+      attributeFilter: ["data-selected", "data-name", "title", "data-emoji"],
       childList: true,
     });
 
@@ -46,13 +46,18 @@ export function useSelection(props: SelectionProps) {
 
     return () => observer.disconnect();
   }).pipe(
-    distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
     tap((ids) => selection$.next(ids)),
     shareReplay(1)
   );
 
   return {
     selection$,
+    removeSelected: () => {
+      props.sandbox.querySelectorAll('concept-card-element[data-selected="true"]').forEach((el) => el.remove());
+    },
+    removeOthers: () => {
+      props.sandbox.querySelectorAll("concept-card-element:not([data-selected=\"true\"])").forEach((el) => el.remove());
+    },
     effect$: merge(click$, observer$).pipe(ignoreElements()),
   };
 }

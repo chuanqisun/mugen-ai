@@ -13,10 +13,6 @@
   font-size: inherit;
 }
 
-body {
-  font-size: 14px;
-}
-
 button {
   padding: 4px;
   border: 1px solid var(--btn-border);
@@ -72,4 +68,8 @@ menu {
 .field--inline {
   flex-direction: row;
   align-items: center;
+}
+
+ol {
+  padding-inline-start: 1rem;
 }
