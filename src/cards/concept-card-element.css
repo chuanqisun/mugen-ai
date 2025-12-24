@@ -4,6 +4,7 @@ concept-card-element {
   padding: 4px;
   border-radius: 4px;
   cursor: grab;
+  background-color: var(--card-background);
 
   &:hover {
     border-color: var(--btn-border-hover);
